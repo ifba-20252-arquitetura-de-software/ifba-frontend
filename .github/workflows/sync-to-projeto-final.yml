@@ -1,0 +1,40 @@
+name: Sync Frontend to Projeto Final
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositório origem
+        uses: actions/checkout@v4
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Clonar repositório destino
+        env:
+          TOKEN: ${{ secrets.PAT_SYNC }}
+        run: |
+          git clone https://x-access-token:${TOKEN}@github.com/ifba-20252-arquitetura-de-software/ifba-20252-projeto-final.git destino
+          cd destino
+          git checkout -B front-end || git checkout front-end
+          cd ..
+
+      - name: Copiar alterações
+        run: |
+          rsync -av --exclude '.git' ./ ./destino/
+
+      - name: Enviar para o repositório destino
+        env:
+          TOKEN: ${{ secrets.PAT_SYNC }}
+        run: |
+          cd destino
+          git add .
+          git commit -m "Sincronização automática do repositório frontend" || echo "Nada para enviar"
+          git push https://x-access-token:${TOKEN}@github.com/ifba-20252-arquitetura-de-software/ifba-20252-projeto-final.git front-end
